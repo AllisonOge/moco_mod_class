@@ -3,3 +3,11 @@ torchvision
 gsutil
 scikit-learn
 numpy
+matplotlib
+timm
+gcsfs
+h5py
+tqdm
+pandas
+seaborn
+tensorboard
