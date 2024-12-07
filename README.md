@@ -27,11 +27,56 @@ Bucket URLs for experimenting are
 **Downstream task (AMC)**
 
 
-## Training
+## Training (Pretaining stage)
 
 ### Usage
+Single node distributed training with 2 GPUs
 ```bash
+OMP_NUM_THREADS=4 torchrun \
+ --nproc_per_node=2 \
+ -- moco_train.py \
+ --epochs 300 \ # number of epochs
+ -b 2048 \ # batch size
+ --data train_sliced_lnc_riaran.h5 # path to training data
+```
 
+## Training (Finetuning stage)
+
+### Usage
+```yaml
+# config.yaml
+batch_size: 256
+num_workers: 4
+experiment_name: 07dec_frozenmodel
+epochs: 50
+optimizer: adamw # or sgd
+lr: 0.001
+weight_decay: 0.00005
+momentum: 0.9 # only for sgd
+scheduler: reduceonplateau # or cosineannealing
+warmup_epochs: 5
+dataset:
+  train: RML22_train.h5
+  val: RML22_val.h5
+checkpoint: false
+# pretrained: /path/to/pretrained.pth
+# freeze: true
+classes:
+  0: 8psk
+  1: am-dsb
+  2: bpsk
+  3: cpfsk
+  4: gfsk
+  5: pam4
+  6: qam16
+  7: qam64
+  8: qpsk
+  9: wbfm
+nclasses: 10
+
+```
+```bash
+python train.py -c config.yaml
 ```
 
 ## Main Results
@@ -61,8 +106,8 @@ Bucket URLs for experimenting are
 
 | Training Data Size (GB) | Percent increase (%) |  Fine-tuned (%) |
 | --- | --- | --- |
-| 12 | - |  |
-| 13 | 8% |  |
-|  |   |  |
+| 11 | - |  |
+| 13 | 18% |  |
+| 70 |  536% |  |
 
 ## Checkpoints
