@@ -102,6 +102,14 @@ python train.py -c config.yaml
 | 80 |  |
 | 90 |  |
 
+> *Influence of model size*
+
+| Metrics | Accuracy (%) |
+| --- | --- |
+|   |  Model Size (GB) |
+| Supervised |  |
+| Ours |  |
+
 > *Influence of more training data*
 
 | Training Data Size (GB) | Percent increase (%) |  Fine-tuned (%) |
