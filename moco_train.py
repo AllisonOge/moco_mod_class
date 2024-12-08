@@ -62,7 +62,7 @@ parser.add_argument('-b', '--batch-size', default=4096, type=int,
 parser.add_argument('-j', '--num-workers', default=32, type=int, metavar='N',
                     help='number of data loading workers (default: 32)')
 
-parser.add_argument('--aug-rate', '-r', type=int, metavar='NAME', default=0.2,
+parser.add_argument('--aug-rate', '-r', type=float, metavar='NAME', default=0.2,
                     choices=[.1, .2, .3, .4, .5, .6, .7, .8, .9],
                     help='zero masking augmentation rate')
 
