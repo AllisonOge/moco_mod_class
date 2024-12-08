@@ -1,0 +1,26 @@
+batch_size: 256
+checkpoint: false
+classes:
+  0: 8psk
+  1: am-dsb
+  2: bpsk
+  3: cpfsk
+  4: gfsk
+  5: pam4
+  6: qam16
+  7: qam64
+  8: qpsk
+  9: wbfm
+dataset:
+  train: RML22_train.h5
+  val: RML22_val.h5
+epochs: 50
+experiment_name: 07dec_supervised
+lr: 0.001
+momentum: 0.9
+nclasses: 10
+num_workers: 4
+optimizer: adamw
+scheduler: reduceonplateau
+warmup_epochs: 5
+weight_decay: 5.0e-05

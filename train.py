@@ -74,19 +74,45 @@ def main():
 
     model = mobilenetv3(num_classes=config.get(
         "nclasses"), in_chans=2).to(device)
+    model_parameters = model.parameters()
     # load weight of pretrained model if not none
     if config.get("pretrained"):
         weights = torch.load(config.get("pretrained"),
                              weights_only=True, map_location=device)
-        print(model.load_state_dict(
-            {k.replace("module.base_encoder.", ""): v for k, v in weights["state_dict"].items()}, strict=False))
-        # print("Pretrained model loaded")
+        model.load_state_dict(
+            {k.replace("module.base_encoder.", ""): v for k, v in weights["state_dict"].items()}, strict=False)
+        print("Pretrained model loaded")
+        if config.get("freeze"):
+            # freeze the backbone
+            for name, param in model.named_parameters():
+                if "classifier" not in name:
+                    param.requires_grad = False
+            model_parameters = filter(lambda p: p.requires_grad, model.parameters())
+        else:
+            # finetune with small learning rate
+            feature_params = [
+                p for n, p in model.named_parameters() if 'classifier' not in n]
+            model_parameters = \
+                [
+                    {'params': feature_param,
+                    'lr': config.get('lr') / 10}  # 1/10th of the learning rate
+                    for feature_param in feature_params
+                ]
+            model_parameters += [
+                {'params': [p for n, p in model.named_parameters()
+                            if 'classifier' in n]}
+            ]
+    print(
+        f"Model has {sum(p.numel() for p in model.parameters() if not p.requires_grad):,} frozen parameters")
     print(
         f"Model has {sum(p.numel() for p in model.parameters() if p.requires_grad):,} trainable parameters")
+    print(
+        f"Model has {sum(p.numel() for p in model.parameters()):,} parameters"
+    )
 
     criterion = CrossEntropyLoss()
     # TODO: add more optimizers and schedulers
-    optim = AdamW(model.parameters(), lr=config.get(
+    optim = AdamW(model_parameters, lr=config.get(
         "lr"), weight_decay=config.get("weight_decay"))
     lr_scheduler = ReduceLROnPlateau(optim)
 

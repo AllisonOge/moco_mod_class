@@ -1,10 +1,11 @@
 batch_size: 256
 num_workers: 4
 experiment_name: 07dec_supervised
+# experiment_name: 07dec_ssl_0.2_lnc-ran
 epochs: 50
 optimizer: adamw # or sgd
-lr: 0.001
-weight_decay: 0.00005
+lr: 0.0001
+weight_decay: 0.0005
 momentum: 0.9 # only for sgd
 scheduler: reduceonplateau # or cosineannealing
 warmup_epochs: 5
@@ -12,8 +13,8 @@ dataset:
   train: RML22_train.h5
   val: RML22_val.h5
 checkpoint: false
-# pretrained: /path/to/pretrained.pth
-# freeze: true
+pretrained: ssl_0.2_lnc-ran_best.pth
+freeze: true
 classes:
   0: 8psk
   1: am-dsb
