@@ -115,12 +115,13 @@ class CSVLogger:
             self.writer = csv.writer(self.file, dialect=CustomDialet)
 
         self.writer.writerow(stats)
+        self.file.flush()
 
     def _init_file(self):
         self.file = open(self.filename, "a+" if self.append else "w+")
-        header = ["epoch", "train_loss", "val_loss", "val_acc", "lr"]
+        self.file.seek(0)
         if not self.append or not bool(len(self.file.read())):
-            self.file.seek(0)
+            header = ["epoch", "train_loss", "val_loss", "val_acc", "lr"]
             # only add the header if the file is empty
             self._save_stats(header)
 

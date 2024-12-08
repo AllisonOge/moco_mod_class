@@ -1,5 +1,5 @@
-batch_size: 256
-checkpoint: false
+batch_size: 1024
+checkpoint: experiments/07dec_supervised/last_checkpoint.pt
 classes:
   0: 8psk
   1: am-dsb

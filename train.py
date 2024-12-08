@@ -39,17 +39,17 @@ def main():
     with open(args.config, 'r') as f:
         config = yaml.safe_load(f)
 
-    # create an experiment directory if it does not exist
+    # create an experiment directory if it does not exist only if not resuming training
     os.makedirs("experiments", exist_ok=True)
     experiment_name = os.path.join(
         "experiments", config.get("experiment_name"))
     i = 0
-    while os.path.exists(experiment_name):
+    while not config.get("checkpoint") and os.path.exists(experiment_name):
         i += 1
         experiment_name = os.path.join(
             "experiments", f"{config.get('experiment_name')}_{i}")
         print(f"Experiment name already exists. Changing to {experiment_name}")
-    os.makedirs(experiment_name)
+    os.makedirs(experiment_name, exist_ok=True)
 
     # save the configuration file
     with open(f"{experiment_name}/config.yaml", "w") as f:
@@ -127,18 +127,27 @@ def main():
     }
 
     logger = CSVLogger(filename=f"{experiment_name}/results.csv", append=True)
+    tracker = Tracker("val_loss")
     if config.get("checkpoint"):
-        checkpoint = torch.load(config.get("checkpoint"))
+        checkpoint = torch.load(config.get("checkpoint"), weights_only=True)
         model.load_state_dict(checkpoint["model_state_dict"])
         optim.load_state_dict(checkpoint["opt_state_dict"])
         lr_scheduler.load_state_dict(checkpoint["lr_state_dict"])
-        start_epoch = checkpoint["epoch"]
+        start_epoch = checkpoint["epoch"] + 1
         print(f"Resuming training from epoch {start_epoch}")
 
-        # TODO: populate the history with content of csv file if it exists
-        print(logger.read())
+        old_history = np.vstack(logger.read())
+        for i in range(old_history.shape[1]):
+            field = str(old_history[0, i])
+            if field != "epoch":
+                history[field] = list(map(float, old_history[1:, i].tolist()))
+            else:
+                history[field] = list(map(int, old_history[1:, i].tolist()))
 
-    tracker = Tracker("val_loss")
+
+        # print(history)
+        tracker.best = np.min(history["val_loss"])
+
     for epoch in range(start_epoch, EPOCHS + 1):
         avg_tloss = train_epoch(model, train_loader,
                                 criterion, optim, device)
@@ -169,19 +178,19 @@ def main():
         print(f"Checkpoint saved at {experiment_name}/last_checkpoint.pt")
 
     logger.close()
-    fig = plt.figure(figsize=(15, 3))
+    fig = plt.figure(figsize=(15, 4))
     ax = fig.add_subplot(131)
-    ax.plot(history["train_loss"], label="train loss")
-    ax.plot(history["val_loss"], label="val losss")
+    ax.plot(history["epoch"], history["train_loss"], label="train loss")
+    ax.plot(history["epoch"], history["val_loss"], label="val losss")
     ax.set_xlabel("epochs")
     ax.legend()
 
     ax = fig.add_subplot(132)
-    ax.plot(history["lr"])
+    ax.plot(history["epoch"], history["lr"])
     ax.set_xlabel("epochs")
 
     ax = fig.add_subplot(133)
-    ax.plot(history["val_acc"])
+    ax.plot(history["epoch"], history["val_acc"])
     ax.set_xlabel("epochs")
     fig.savefig(f"{experiment_name}/training_val_loss.png", dpi=300)
     plt.close()
@@ -189,7 +198,7 @@ def main():
     # anaylse the model performance with test data if provided else use the validation data
     # plot the confusion matrix and save some predictions to experiment directory
     # load the best model
-    print(model.load_state_dict(torch.load(f"{experiment_name}/weights.pth")))
+    print(model.load_state_dict(torch.load(f"{experiment_name}/weights.pth", weights_only=True)))
     model.eval()
 
     true_labels = []
@@ -200,9 +209,9 @@ def main():
     with torch.no_grad():
         for xb, yb in val_loader:
             xb, yb = xb.to(device), yb.to(device)
-            yb_hat = model(xb, xb[:, 0], xb[:, 1])
+            yb_hat = model(xb)
             yb_hat = torch.argmax(F.softmax(yb_hat, dim=-1), dim=1)
-            true_labels.extend(yb.cpu().numpy())
+            true_labels.extend(yb[:, 0].cpu().numpy())
             pred_labels.extend(yb_hat.cpu().numpy())
 
     # TODO: save the confusion matrix
@@ -217,7 +226,7 @@ def main():
     prec = precision_score(true_labels, pred_labels, average="macro")
     rec = recall_score(true_labels, pred_labels, average="macro")
 
-    threshold = 0.3
+    threshold = 0.1
     cm_display = np.where(cm > threshold, cm, np.nan)
 
     plt.figure(figsize=(15, 10), dpi=300)
