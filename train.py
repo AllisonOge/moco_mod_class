@@ -82,26 +82,27 @@ def main():
         model.load_state_dict(
             {k.replace("module.base_encoder.", ""): v for k, v in weights["state_dict"].items()}, strict=False)
         print("Pretrained model loaded")
-        if config.get("freeze"):
-            # freeze the backbone
-            for name, param in model.named_parameters():
-                if "classifier" not in name:
-                    param.requires_grad = False
-            model_parameters = filter(lambda p: p.requires_grad, model.parameters())
-        else:
-            # finetune with small learning rate
-            feature_params = [
-                p for n, p in model.named_parameters() if 'classifier' not in n]
-            model_parameters = \
-                [
-                    {'params': feature_param,
+    if config.get("freeze"):
+        # freeze the backbone
+        for name, param in model.named_parameters():
+            if "classifier" not in name:
+                param.requires_grad = False
+        model_parameters = filter(
+            lambda p: p.requires_grad, model.parameters())
+    else:
+        # finetune with small learning rate
+        feature_params = [
+            p for n, p in model.named_parameters() if 'classifier' not in n]
+        model_parameters = \
+            [
+                {'params': feature_param,
                     'lr': config.get('lr') / 10}  # 1/10th of the learning rate
-                    for feature_param in feature_params
-                ]
-            model_parameters += [
-                {'params': [p for n, p in model.named_parameters()
-                            if 'classifier' in n]}
+                for feature_param in feature_params
             ]
+        model_parameters += [
+            {'params': [p for n, p in model.named_parameters()
+                        if 'classifier' in n]}
+        ]
     print(
         f"Model has {sum(p.numel() for p in model.parameters() if not p.requires_grad):,} frozen parameters")
     print(
@@ -124,6 +125,7 @@ def main():
         "val_loss": [],
         "val_acc": [],
         "lr": [],
+        "epoch": []
     }
 
     logger = CSVLogger(filename=f"{experiment_name}/results.csv", append=True)
@@ -134,7 +136,8 @@ def main():
         optim.load_state_dict(checkpoint["opt_state_dict"])
         lr_scheduler.load_state_dict(checkpoint["lr_state_dict"])
         start_epoch = checkpoint["epoch"] + 1
-        print(f"Resuming training from epoch {start_epoch}") if start_epoch <= EPOCHS else None
+        print(
+            f"Resuming training from epoch {start_epoch}") if start_epoch <= EPOCHS else None
 
         old_history = np.vstack(logger.read())
         for i in range(old_history.shape[1]):
@@ -144,8 +147,7 @@ def main():
             else:
                 history[field] = list(map(int, old_history[1:, i].tolist()))
 
-
-        print(history)
+        # print(history)
         tracker.best = np.min(history["val_loss"])
 
     for epoch in range(start_epoch, EPOCHS + 1):
@@ -165,6 +167,7 @@ def main():
         history["val_loss"].append(avg_vloss)
         history["val_acc"].append(avg_acc)
         history["lr"].append(lr)
+        history["epoch"].append(epoch)
         logger.save([epoch, avg_tloss, avg_vloss, avg_acc, lr])
 
         # save the last checkpoint
@@ -198,7 +201,8 @@ def main():
     # anaylse the model performance with test data if provided else use the validation data
     # plot the confusion matrix and save some predictions to experiment directory
     # load the best model
-    print(model.load_state_dict(torch.load(f"{experiment_name}/weights.pth", weights_only=True)))
+    print(model.load_state_dict(torch.load(
+        f"{experiment_name}/weights.pth", weights_only=True)))
     model.eval()
 
     true_labels = []
@@ -214,7 +218,6 @@ def main():
             true_labels.extend(yb[:, 0].cpu().numpy())
             pred_labels.extend(yb_hat.cpu().numpy())
 
-    # TODO: save the confusion matrix
     true_labels = np.array(true_labels)
     pred_labels = np.array(pred_labels)
 

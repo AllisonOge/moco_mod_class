@@ -4,3 +4,5 @@ __pycache__/
 runs/
 saved_models/
 RML22.pickle.01A
+*.zip
+Modrec_IQ_Samples/

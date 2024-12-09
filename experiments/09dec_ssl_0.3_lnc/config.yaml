@@ -1,0 +1,27 @@
+batch_size: 1024
+classes:
+  0: 8psk
+  1: am-dsb
+  2: bpsk
+  3: cpfsk
+  4: gfsk
+  5: pam4
+  6: qam16
+  7: qam64
+  8: qpsk
+  9: wbfm
+dataset:
+  train: RML22_train.h5
+  val: RML22_val.h5
+epochs: 30
+experiment_name: 09dec_ssl_0.3_lnc
+freeze: false
+lr: 0.003
+momentum: 0.9
+nclasses: 10
+num_workers: 4
+optimizer: adamw
+pretrained: ssl_0.3_lnc_best.pth
+scheduler: reduceonplateau
+warmup_epochs: 5
+weight_decay: 0.0005

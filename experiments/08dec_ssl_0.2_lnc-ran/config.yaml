@@ -1,4 +1,5 @@
 batch_size: 1024
+checkpoint: experiments/08dec_ssl_0.2_lnc-ran/last_checkpoint.pt
 classes:
   0: 8psk
   1: am-dsb
@@ -13,7 +14,7 @@ classes:
 dataset:
   train: RML22_train.h5
   val: RML22_val.h5
-epochs: 50
+epochs: 30
 experiment_name: 08dec_ssl_0.2_lnc-ran
 freeze: true
 lr: 0.001
