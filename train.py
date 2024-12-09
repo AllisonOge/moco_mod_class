@@ -134,7 +134,7 @@ def main():
         optim.load_state_dict(checkpoint["opt_state_dict"])
         lr_scheduler.load_state_dict(checkpoint["lr_state_dict"])
         start_epoch = checkpoint["epoch"] + 1
-        print(f"Resuming training from epoch {start_epoch}")
+        print(f"Resuming training from epoch {start_epoch}") if start_epoch <= EPOCHS else None
 
         old_history = np.vstack(logger.read())
         for i in range(old_history.shape[1]):
@@ -145,7 +145,7 @@ def main():
                 history[field] = list(map(int, old_history[1:, i].tolist()))
 
 
-        # print(history)
+        print(history)
         tracker.best = np.min(history["val_loss"])
 
     for epoch in range(start_epoch, EPOCHS + 1):
