@@ -2,8 +2,8 @@
 #==============================================
 #SBATCH --partition=gpu-v100
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=8
-#SBATCH --time=3:00:00
+#SBATCH --cpus-per-task=16
+#SBATCH --time=5:00:00
 #SBATCH --gres=gpu:1
 #SBATCH --nodes=1
 #SBATCH --mem=16G
